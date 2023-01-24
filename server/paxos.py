@@ -15,16 +15,13 @@ class Paxos(object):
     proposer = Clause()
     acceptor = Clause()
     
-    @staticmethod
     def test() -> None:
         print('Test was a success')
         pass
 
-    @staticmethod
     def prepare() -> int:
         return Paxos.proposer.identifier + randint(1, 2)
 
-    @staticmethod
     def promise(identifier) -> int:
         print(f'! Promise request of identifier: {identifier} recieved')
         if identifier > Paxos.acceptor.identifier:
@@ -32,7 +29,6 @@ class Paxos(object):
 
         return {'promise':Paxos.acceptor.identifier}
 
-    @staticmethod
     def accept(identifier, value):
         if Paxos.acceptor.identifier == identifier:
             Paxos.proposer = Clause(identifier=identifier, value=value)
@@ -41,3 +37,6 @@ class Paxos(object):
                 f.write(f'{identifier}:{value}\n')
 
         return {'accept':True}
+
+    def test(self):
+        return 'success'

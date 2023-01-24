@@ -11,37 +11,62 @@ class RPCServer:
         self._attributes = {}
         pass
 
+
+    def help(self):
+        self.printAttributes()
+        self.printMethods()
+
+
     def printMethods(self):
+        print('REGISTERED METHODS:')
         for method in self._methods.items():
-            print(method)
+            print('\t',method)
 
 
     def printAttributes(self):
+        print('REGISTERED ATTRIBUTES:')
         for attribute in self._attributes.items():
-            print(attribute)
+            print('\t',attribute)
 
+    '''
 
-    def registerFunction(self, function):
-        self._methods.update({function.__name__ : function})
-
-
-    def registerInstance(self, instance):
-        '''
-            Register an instance insed this RPC class
-        '''
-        for functionName, function in inspect.getmembers(instance, predicate=inspect.ismethod):
-            if functionName[0] != '_':
-                self._methods.update({functionName: function})
-
-
-        for attributeName, function in inspect.getmembers(instance, lambda a:not(inspect.isroutine(a))):
-            if attributeName[0] != '_':
-                self._attributes.update({attributeName: function})
-
-
-    def handle(self, client:socket.socket, address=None):
+        registerFunction: pass a method to register all its methods and attributes so they can be used by the client via rpcs
+            Arguments:
+            instance -> a class object
+    '''
+    def registerMethod(self, function):
         try:
-            print(f'Request recieved from {address}')
+            self._methods.update({function.__name__ : function})
+        except:
+            raise Exception('A non method object has been passed into RPCServer.registerMethod(self, function)')
+
+    '''
+        registerInstance: pass a instance of a class to register all its methods and attributes so they can be used by the client via rpcs
+            Arguments:
+            instance -> a class object
+    '''
+    def registerInstance(self, instance=None):
+        try:
+            # Regestring the instance's methods
+            for functionName, function in inspect.getmembers(instance, predicate=inspect.ismethod):
+                if not functionName.startswith('__'):
+                    self._methods.update({functionName: function})
+
+            # Regestring the instance's attributes
+            for attributeName, function in inspect.getmembers(instance, lambda a:not(inspect.isroutine(a))):
+                if not attributeName.startswith('__'):
+                    self._attributes.update({attributeName: function})
+        except:
+            raise Exception('A non class object has been passed into RPCServer.registerInstance(self, instance)')
+
+    '''
+        handle: pass client connection and it's address to perform requests between client and server (recorded fucntions or) 
+        Arguments:
+        client -> 
+    '''
+    def handle(self, client:socket.socket, address:tuple):
+        try:
+            print(f'Managing request from {address}.')
             while True:
                 functionName, args, kwargs = json.loads(client.recv(SIZE).decode())
 
@@ -49,16 +74,21 @@ class RPCServer:
                     response = self._methods[functionName](*args, **kwargs)
                     client.sendall(json.dumps(response).encode())
                 except Exception as e:
+                    # Send back exeption if function called by client is not registred 
                     client.sendall(json.dumps(str(e)).encode())
         except:
             pass
-        client.close()
+        finally:
+            print(f'Completed request from {address}.')
+            client.close()
+
 
 
 
 class RPCClient:
-    def __init__(self, connection:socket.socket) -> None:
-        self.__sock = connection
+    def __init__(self, address:tuple) -> None:
+        self.__sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.__sock.connect(address)
         pass
 
     def __getattr__(self, __name: str):
