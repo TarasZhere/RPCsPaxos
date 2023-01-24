@@ -10,28 +10,27 @@ class Clause:
         pass
 
 class Paxos(object):
-    # This class is a static class
-    # no constructor
-    proposer = Clause()
-    acceptor = Clause()
+    def __init__(self) -> None:
+        self.proposer = Clause()
+        self.acceptor = Clause()
     
     def test() -> None:
         print('Test was a success')
         pass
 
-    def prepare() -> int:
-        return Paxos.proposer.identifier + randint(1, 2)
+    def prepare(self) -> int:
+        return self.proposer.identifier + randint(1, 2)
 
-    def promise(identifier) -> int:
+    def promise(self, identifier) -> int:
         print(f'! Promise request of identifier: {identifier} recieved')
-        if identifier > Paxos.acceptor.identifier:
-            Paxos.acceptor = Clause(identifier=identifier)
+        if identifier > self.acceptor.identifier:
+            self.acceptor = Clause(identifier=identifier)
 
-        return {'promise':Paxos.acceptor.identifier}
+        return {'promise':self.acceptor.identifier}
 
-    def accept(identifier, value):
-        if Paxos.acceptor.identifier == identifier:
-            Paxos.proposer = Clause(identifier=identifier, value=value)
+    def accept(self, identifier, value):
+        if self.acceptor.identifier == identifier:
+            self.proposer = Clause(identifier=identifier, value=value)
             # Write proposer into safe momory
             with open(f'log_{sys.argv[1]}.txt', 'a') as f:
                 f.write(f'{identifier}:{value}\n')
