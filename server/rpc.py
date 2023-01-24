@@ -1,6 +1,7 @@
 import pickle
 import socket
-from threading import Thread
+import inspect
+
 SIZE = 1024
 
 class RPCServer:
@@ -14,6 +15,9 @@ class RPCServer:
         self._functions.update({function.__name__ : function})
 
     def registerInstance(self, instance):
+        for functionName, function in inspect.getmembers(instance, predicate=inspect.ismethod):
+            if functionName[0] != '_':
+                self._functions.update({functionName: function})
         pass
 
     def handle(self, connection:socket.socket):
