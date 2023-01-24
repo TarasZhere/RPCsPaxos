@@ -9,14 +9,15 @@ PORT = 8000  # The port used by the server
 SIZE = 1024
 
 
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.connect((HOST, PORT))
+# def multy():
+server = RPCClient(sock)
 
-def multy():
-    server = RPCClient((HOST, PORT))
-
-    server.test()
+print(server.test())
 
 
-for _ in range(3):
-    Thread(target=multy).start()
+# for _ in range(1):
+#     Thread(target=multy).start()
 
 
