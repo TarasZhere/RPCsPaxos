@@ -1,0 +1,4 @@
+# ignore ALL __pycache__ files
+__pycache__/
+tempCodeRunnerFile.py
+test.py

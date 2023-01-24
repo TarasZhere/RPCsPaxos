@@ -1,6 +1,6 @@
 from random import randint 
-import json
 import sys
+from threadingReturn import ThreadReturn as Thread
 
 
 class Clause:
