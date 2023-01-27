@@ -34,6 +34,7 @@ class Server:
             
 if __name__=='__main__':
 
-    s = Server(port=int(sys.argv[1]))
-
-    s.run()
+    try:
+        Server(port=int(sys.argv[1])).run()
+    except:
+        print('Port in use')

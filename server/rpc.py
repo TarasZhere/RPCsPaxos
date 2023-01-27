@@ -8,25 +8,13 @@ class RPCServer:
 
     def __init__(self) -> None:
         self._methods = {}
-        self._attributes = {}
         pass
 
-
     def help(self):
-        self.printAttributes()
-        self.printMethods()
-
-
-    def printMethods(self):
         print('REGISTERED METHODS:')
         for method in self._methods.items():
             print('\t',method)
 
-
-    def printAttributes(self):
-        print('REGISTERED ATTRIBUTES:')
-        for attribute in self._attributes.items():
-            print('\t',attribute)
 
     '''
 
@@ -51,11 +39,6 @@ class RPCServer:
             for functionName, function in inspect.getmembers(instance, predicate=inspect.ismethod):
                 if not functionName.startswith('__'):
                     self._methods.update({functionName: function})
-
-            # Regestring the instance's attributes
-            for attributeName, function in inspect.getmembers(instance, lambda a:not(inspect.isroutine(a))):
-                if not attributeName.startswith('__'):
-                    self._attributes.update({attributeName: function})
         except:
             raise Exception('A non class object has been passed into RPCServer.registerInstance(self, instance)')
 
@@ -66,7 +49,7 @@ class RPCServer:
     '''
     def handle(self, client:socket.socket, address:tuple):
         try:
-            print(f'Managing request from {address}.')
+            print(f'Managing  request from {address}.')
             while True:
                 functionName, args, kwargs = json.loads(client.recv(SIZE).decode())
 
@@ -86,17 +69,44 @@ class RPCServer:
 
 
 class RPCClient:
-    def __init__(self, address:tuple) -> None:
-        self.__sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.__sock.connect(address)
-        pass
+    def __init__(self, address:tuple=None) -> None:
+        self.__sock = None
+        self.__address = address
+
+
+    def isConnected(self):
+        try:
+            self.__sock.sendall(b'test')
+            # self.__sock.recv(SIZE)
+            return True
+
+        except:
+            return False
+
+
+    def connect(self):
+        try:
+            self.__sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.__sock.connect(self.__address)
+        except:
+            raise Exception('Client was not able to connect.')
+    
+    def disconnect(self):
+        try:
+            self.__sock.close()
+        except:
+            pass
+
 
     def __getattr__(self, __name: str):
-        def do_rpc(*args, **kwargs):
+        def excecute(*args, **kwargs):
             self.__sock.sendall(json.dumps((__name, args, kwargs)).encode())
             response = json.loads(self.__sock.recv(SIZE).decode())
             return response
-        return do_rpc
+        return excecute
 
     def __del__(self):
-        self.__sock.close()
+        try:
+            self.__sock.close()
+        except:
+            pass
