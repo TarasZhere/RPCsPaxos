@@ -12,6 +12,9 @@ class Clause:
 
 class Paxos(object):
     def __init__(self) -> None:
+        self._proposals = {}
+        self._accepted = {}
+        self._promised = {}
         self.proposer = Clause()
         self.acceptor = Clause()
         self.__instances = [
@@ -27,8 +30,9 @@ class Paxos(object):
         for thread in threads: thread.start()
 
         responses = [True for thread in threads if thread.join(3)]
+        print('RESPONSES:',responses)
 
-        return len(responses) > len(self.__instances)/2
+        return len(responses) > len(self.__instances)//2
 
     
     def paxos(self, value):
@@ -40,8 +44,8 @@ class Paxos(object):
 
         currentIdentifier = self.proposer.identifier
 
-        # for _ in range(3):
-        while True:
+        for _ in range(3):
+        # while True:
 
             currentIdentifier += randint(1,3)
             print(f'New proposal #{currentIdentifier} generated.')
@@ -55,10 +59,8 @@ class Paxos(object):
                 continue
 
             
-            if not self.__majority(self.__accept, currentIdentifier, value):
-                continue
-            else: 
-                break
+            self.__majority(self.__accept, currentIdentifier, value)
+            break
 
 
         for instance in self.__instances:
