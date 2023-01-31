@@ -3,113 +3,107 @@ import sys
 from threadingReturn import ThreadReturn as Thread
 from rpc import RPCClient
 from time import sleep
+import json
 
-class Clause:
-    def __init__(self, identifier=-1, value=None) -> None:
-        self.identifier = identifier
-        self.value = value
-        pass
 
-class Paxos(object):
+class Acceptor:
     def __init__(self) -> None:
-        self._proposals = {}
-        self._accepted = {}
-        self._promised = {}
-        self.proposer = Clause()
-        self.acceptor = Clause()
-        self.__instances = [
+        self.accepted = {}
+        self.promised = {}
+
+    def promise(self, proposalNumber):
+        if proposalNumber in self.accepted:
+            return self.accepted.get(proposalNumber)
+
+        return None
+
+    def accept(self, proposalNumber, event):
+        self.accepted[proposalNumber] = event
+
+        # Write proposer into safe momory
+        with open(f'log_{sys.argv[1]}.json', 'r') as f:
+            data = json.loads(f.read())
+
+        data.append(self.accepted)
+
+        # Write proposer into safe momory
+        with open(f'log_{sys.argv[1]}.json', 'w') as f:
+            f.write(json.dumps(data))
+
+
+class Proposer(object):
+    def __init__(self) -> None:
+        self.latestProposalNumer = 0
+
+        self.acceptors = [
             RPCClient(('localhost', 8000)),
             RPCClient(('localhost', 8001)),
             RPCClient(('localhost', 8002)),
         ]
 
-    def __majority(self, _function, *args) -> bool:
+    def __phase1(self, proposalNumber):
+        # A proposer selects a proposal number
 
-        threads = [Thread(target=_function, args=[instance, *args]) for instance in self.__instances]
+        # sending a prepare request with proposalNumber to a majority of acceptors.
+        acceptors = [Thread(target=acceptor.promise, args=[proposalNumber]) for acceptor in self.acceptors]
 
-        for thread in threads: thread.start()
+        for acceptor in acceptors:
+            acceptor.start()
 
-        responses = [True for thread in threads if thread.join(3)]
-        print('RESPONSES:',responses)
+        promises = [acceptor.join(3) for acceptor in acceptors]
 
-        return len(responses) > len(self.__instances)//2
+        if len(promises) <= len(self.acceptors) // 2:
+            raise Exception('Not enough responses')
 
-    
-    def paxos(self, value):
+        return promises
+        
 
-        for instance in self.__instances:
-            if not instance.isConnected():
-                instance.connect()
+    def __phase2(self, proposalNumber, event):
 
+        for acceptor in self.acceptors:
+            Thread(target=acceptor.accept, args=[proposalNumber, event]).start()
 
-        currentIdentifier = self.proposer.identifier
+        self.latestProposalNumer = proposalNumber
 
-        for _ in range(3):
-        # while True:
+    def paxos(self, event) -> str:
 
-            currentIdentifier += randint(1,3)
-            print(f'New proposal #{currentIdentifier} generated.')
+        for acceptor in self.acceptors:
+            if not acceptor.isConnected():
+                acceptor.connect()
 
-    
+        proposalNumber = self.latestProposalNumer + 1
 
-            # check that you have the magiority of answers
-            if not self.__majority(self.__prepare, currentIdentifier):
-                # try again with incremented 
-                sleep(0.2)
-                continue
+        print(f'Proposal {proposalNumber} for event: {event}')
 
-            
-            self.__majority(self.__accept, currentIdentifier, value)
-            break
+        for notFinalIteration in [True, True, False]:
+            try:
+                promises = self.__phase1(proposalNumber)
+                break
+            except:
+                if notFinalIteration:
+                    continue
 
+                for acceptor in self.acceptors: 
+                    acceptor.disconnect()
+                return 'Failed'
 
-        for instance in self.__instances:
-            instance.disconnect()
+        self.latestProposalNumer = proposalNumber
+
+        majorityVote = max(set(promises), key=promises.count)
+        
+        if majorityVote:
+            self.__phase2(proposalNumber, majorityVote)
+        else: 
+            self.__phase2(proposalNumber, event)
+
+        for acceptor in self.acceptors: 
+            acceptor.disconnect()
 
         return 'Success'
 
 
 
-    def __prepare(self, instance, identifier) -> int:
-        try:
-            return instance.promise(identifier)
-        except:
-            return None
         
-    def promise(self, identifier):
-        ## for testiung purpose only to verify if thread.join(3) works
-        # if sys.argv[1] == "8000":
-        #     sleep(2)
+    
 
-        print(f'! Promise request #{identifier} recieved:', end=' ')
-        if identifier > self.acceptor.identifier:
-            print('Accepted.')
-            self.acceptor = Clause(identifier=identifier)
-            return vars(self.acceptor)
-        else:
-            print('Rejected')
 
-        return None
-
-    def __accept(self, instance, identifier, value):
-        try:
-            return instance.accepted(identifier, value)
-        except:
-            return None
-
-    def accepted(self, identifier, value) -> None:
-        print(f'! Accept  request #{identifier} recieved:', end=' ')
-        if self.acceptor.identifier == identifier:
-
-            self.proposer = Clause(identifier=identifier, value=value)
-            # Write proposer into safe momory
-            with open(f'log_{sys.argv[1]}.txt', 'a') as f:
-                f.write(f'{identifier}:{value}\n')
-            
-            print('Accepted.')
-            return True
-
-        print('Rejected.')
-        return None
-
-        

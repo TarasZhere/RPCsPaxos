@@ -3,7 +3,7 @@ from rpc import RPCServer
 from threading import Thread
 from threadingReturn import ThreadReturn
 import sys
-from paxos import Paxos
+from paxos import Acceptor, Proposer
 
 class Server:
     def __init__(self, host:str='localhost', port:int=8000) -> None:
@@ -11,7 +11,9 @@ class Server:
         self.port = port
         self.address = (host, port)
         self.rpc = RPCServer()
-        self.rpc.registerInstance(Paxos())
+        self.rpc.registerInstance(Acceptor())
+        self.rpc.registerInstance(Proposer())
+        
         pass
 
 
@@ -36,5 +38,6 @@ if __name__=='__main__':
 
     try:
         Server(port=int(sys.argv[1])).run()
-    except:
+    except Exception as e:
+        print(e)
         print('Port in use')

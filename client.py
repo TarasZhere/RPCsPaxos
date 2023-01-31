@@ -12,7 +12,8 @@ def multy():
     server = RPCClient((HOST, PORT + randint(0,2)))
     server.connect()
     print(server.paxos(randint(0,10)))
+    server.disconnect()
 
-for _ in range(3):
+for _ in range(1):
     Thread(target=multy).start()
 

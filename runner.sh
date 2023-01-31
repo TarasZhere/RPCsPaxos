@@ -1,5 +1,7 @@
 #! /bin/bash
 
 echo 'Hello world'
-gnome-terminal -- command
+
+xterm -e 'echo "hello"'
+
 read pause

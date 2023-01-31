@@ -7,12 +7,12 @@ SIZE = 1024
 class RPCServer:
 
     def __init__(self) -> None:
-        self._methods = {}
+        self.__methods = {}
         pass
 
     def help(self):
         print('REGISTERED METHODS:')
-        for method in self._methods.items():
+        for method in self.__methods.items():
             print('\t',method)
 
 
@@ -24,7 +24,7 @@ class RPCServer:
     '''
     def registerMethod(self, function):
         try:
-            self._methods.update({function.__name__ : function})
+            self.__methods.update({function.__name__ : function})
         except:
             raise Exception('A non method object has been passed into RPCServer.registerMethod(self, function)')
 
@@ -37,8 +37,8 @@ class RPCServer:
         try:
             # Regestring the instance's methods
             for functionName, function in inspect.getmembers(instance, predicate=inspect.ismethod):
-                if not functionName.startswith('__'):
-                    self._methods.update({functionName: function})
+                if not functionName.startswith('_'):
+                    self.__methods.update({functionName: function})
         except:
             raise Exception('A non class object has been passed into RPCServer.registerInstance(self, instance)')
 
@@ -54,7 +54,7 @@ class RPCServer:
                 functionName, args, kwargs = json.loads(client.recv(SIZE).decode())
 
                 try:
-                    response = self._methods[functionName](*args, **kwargs)
+                    response = self.__methods[functionName](*args, **kwargs)
                     client.sendall(json.dumps(response).encode())
                 except Exception as e:
                     # Send back exeption if function called by client is not registred 
@@ -70,9 +70,8 @@ class RPCServer:
 
 class RPCClient:
     def __init__(self, address:tuple=None) -> None:
-        self.__sock = None
         self.__address = address
-
+        self.__sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     def isConnected(self):
         try:
@@ -83,10 +82,8 @@ class RPCClient:
         except:
             return False
 
-
     def connect(self):
         try:
-            self.__sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.__sock.connect(self.__address)
         except:
             raise Exception('Client was not able to connect.')
@@ -99,10 +96,15 @@ class RPCClient:
 
 
     def __getattr__(self, __name: str):
+
+
         def excecute(*args, **kwargs):
             self.__sock.sendall(json.dumps((__name, args, kwargs)).encode())
-            response = json.loads(self.__sock.recv(SIZE).decode())
-            return response
+            try:
+                response = json.loads(self.__sock.recv(SIZE).decode())
+                return response
+            except:
+                return None
         return excecute
 
     def __del__(self):
