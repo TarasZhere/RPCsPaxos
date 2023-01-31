@@ -5,19 +5,11 @@ from rpc import RPCClient
 from time import sleep
 import json
 
-class Clause:
-    def __init__(self, identifier=-1, value=None) -> None:
-        self.identifier = identifier
-        self.value = value
-        pass
 
 class Paxos(object):
     def __init__(self) -> None:
-        self._proposed = {}
-        self._accepted = {}
-        self._promised = {}
-        # self.proposer = Clause()
-        # self.acceptor = Clause()
+        self.accepted = {}
+        self.promised = {}
         self.__instances = [
             RPCClient(('localhost', 8000)),
             RPCClient(('localhost', 8001)),
@@ -76,19 +68,19 @@ class Paxos(object):
         except:
             return None
         
-    def promise(self, identifier):
+    def promise(self, proposalNumber):
         ## for testiung purpose only to verify if thread.join(3) works
         # if sys.argv[1] == "8000":
         #     sleep(2)
 
-        print(f'! Promise request #{identifier} recieved:', end=' ')
+        print(f'! Promise request #{proposalNumber} recieved:', end=' ')
 
-        if identifier in self._accepted:
+        if proposalNumber in self.accepted:
             print('Rejected.')
-            return vars(self._accepted[identifier])
+            return self.accepted.get(proposalNumber)
         
-        self._promised[identifier] = None
-        return self._promised[identifier]
+        print('Accepted')
+        return None
 
 
     def __accept(self, instance, identifier, value):
@@ -98,20 +90,18 @@ class Paxos(object):
             return None
 
 
-    def accepted(self, identifier, event) -> None:
-        print(f'! Accept  request #{identifier} recieved:', end=' ')
-        if identifier in self._promised:
+    def accept(self, proposalNumber, event) -> None:
+        print(f'! Accept  request #{proposalNumber} recieved:', end=' ')
 
-            self._accepted[identifier] = event
+        self.accepted[proposalNumber] = EnvironmentError
             
-            # Write proposer into safe momory
-            with open(f'log_{sys.argv[1]}.txt', 'w+') as f:
-                data = json.loads(f.read())
-                data.append({identifier:event})
-                f.write(json.dumps(data))
+        # Write proposer into safe momory
+        with open(f'log_{sys.argv[1]}.txt', 'w+') as f:
             
-            print('Accepted.')
-
-        print('Rejected.')
+            data = json.loads(f.read())
+            data.append({proposalNumber:event})
+            f.write(json.dumps(data))
+            
+        print('Accepted.')
 
         
