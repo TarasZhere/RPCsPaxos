@@ -3,6 +3,7 @@ import sys
 from threadingReturn import ThreadReturn as Thread
 from rpc import RPCClient
 from time import sleep
+import json
 
 class Clause:
     def __init__(self, identifier=-1, value=None) -> None:
@@ -12,11 +13,11 @@ class Clause:
 
 class Paxos(object):
     def __init__(self) -> None:
-        self._proposals = {}
+        self._proposed = {}
         self._accepted = {}
         self._promised = {}
-        self.proposer = Clause()
-        self.acceptor = Clause()
+        # self.proposer = Clause()
+        # self.acceptor = Clause()
         self.__instances = [
             RPCClient(('localhost', 8000)),
             RPCClient(('localhost', 8001)),
@@ -30,7 +31,6 @@ class Paxos(object):
         for thread in threads: thread.start()
 
         responses = [True for thread in threads if thread.join(3)]
-        print('RESPONSES:',responses)
 
         return len(responses) > len(self.__instances)//2
 
@@ -82,14 +82,14 @@ class Paxos(object):
         #     sleep(2)
 
         print(f'! Promise request #{identifier} recieved:', end=' ')
-        if identifier > self.acceptor.identifier:
-            print('Accepted.')
-            self.acceptor = Clause(identifier=identifier)
-            return vars(self.acceptor)
-        else:
-            print('Rejected')
 
-        return None
+        if identifier in self._accepted:
+            print('Rejected.')
+            return vars(self._accepted[identifier])
+        
+        self._promised[identifier] = None
+        return self._promised[identifier]
+
 
     def __accept(self, instance, identifier, value):
         try:
@@ -97,19 +97,21 @@ class Paxos(object):
         except:
             return None
 
-    def accepted(self, identifier, value) -> None:
-        print(f'! Accept  request #{identifier} recieved:', end=' ')
-        if self.acceptor.identifier == identifier:
 
-            self.proposer = Clause(identifier=identifier, value=value)
+    def accepted(self, identifier, event) -> None:
+        print(f'! Accept  request #{identifier} recieved:', end=' ')
+        if identifier in self._promised:
+
+            self._accepted[identifier] = event
+            
             # Write proposer into safe momory
-            with open(f'log_{sys.argv[1]}.txt', 'a') as f:
-                f.write(f'{identifier}:{value}\n')
+            with open(f'log_{sys.argv[1]}.txt', 'w+') as f:
+                data = json.loads(f.read())
+                data.append({identifier:event})
+                f.write(json.dumps(data))
             
             print('Accepted.')
-            return True
 
         print('Rejected.')
-        return None
 
         
