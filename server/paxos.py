@@ -1,107 +1,126 @@
-from random import randint 
-import sys
 from threadingReturn import ThreadReturn as Thread
+from collections import Counter
 from rpc import RPCClient
+import sys
+# for testing purpose only
 from time import sleep
-import json
-
+from random import randint
 
 class Paxos(object):
     def __init__(self) -> None:
-        self.accepted = {}
-        self.promised = {}
-        self.__instances = [
+        self.accepted = dict()
+        self.promised = [0]
+        self.nodeId = int(sys.argv[1]) % 10
+        self.acceptors = [
             RPCClient(('localhost', 8000)),
             RPCClient(('localhost', 8001)),
             RPCClient(('localhost', 8002)),
         ]
+        self.numAcceptors = len(self.acceptors)
+        pass
 
-    def __majority(self, _function, *args) -> bool:
+    def promise(self, propNum):
 
-        threads = [Thread(target=_function, args=[instance, *args]) for instance in self.__instances]
+        n = int(propNum)
+        promise = False
 
-        for thread in threads: thread.start()
+        if n > max(self.promised):
+            self.promised.append(n)
+            promise = True
 
-        responses = [True for thread in threads if thread.join(3)]
-
-        return len(responses) > len(self.__instances)//2
-
-    
-    def paxos(self, value):
-
-        for instance in self.__instances:
-            if not instance.isConnected():
-                instance.connect()
+        return (max(self.promised), self.accepted.get(n), promise)
 
 
-        currentIdentifier = self.proposer.identifier
+    def accept(self, propoNum, event):
+        n = int(propoNum)
+        if n not in self.promised:
+            return 'not ok'
 
-        for _ in range(3):
-        # while True:
+        self.accepted.update({
+            n:event
+        })
 
-            currentIdentifier += randint(1,3)
-            print(f'New proposal #{currentIdentifier} generated.')
-
-    
-
-            # check that you have the magiority of answers
-            if not self.__majority(self.__prepare, currentIdentifier):
-                # try again with incremented 
-                sleep(0.2)
-                continue
-
-            
-            self.__majority(self.__accept, currentIdentifier, value)
-            break
+        with open(f'log{sys.argv[1]}.txt', 'a') as file:
+            file.write(f'{propoNum},{event}\n')
+                
+        return 'ok'
 
 
-        for instance in self.__instances:
-            instance.disconnect()
+    def paxos(self, event):
+        self.__connect()
 
-        return 'Success'
+        while True:
+            try:
+                proposalNumber = self.__generateProposal()
+                responses = self.__prepare(proposalNumber)
 
+                # print('Paxos.paxos >> responses ==', responses)
 
+                if self.__checkMajority(responses, proposalNumber):
+                    break
+            except:
+                return "Fail"
 
-    def __prepare(self, instance, identifier) -> int:
-        try:
-            return instance.promise(identifier)
-        except:
-            return None
-        
-    def promise(self, proposalNumber):
-        ## for testiung purpose only to verify if thread.join(3) works
-        # if sys.argv[1] == "8000":
-        #     sleep(2)
+        self.__sendAccept(proposalNumber, event)
 
-        print(f'! Promise request #{proposalNumber} recieved:', end=' ')
+        self.__disconnect()
 
-        if proposalNumber in self.accepted:
-            print('Rejected.')
-            return self.accepted.get(proposalNumber)
-        
-        print('Accepted')
-        return None
+        return "Done"
 
+    def __sendAccept(self, propNum, event):
 
-    def __accept(self, instance, identifier, value):
-        try:
-            return instance.accepted(identifier, value)
-        except:
-            return None
+        threads = [Thread(target=acc.accept, args=[propNum, event]) for acc in self.acceptors]
+
+        for t in threads: t.start()
+            # this is a necessay step since the socket could be before recieving a response
+        for t in threads: t.join()
 
 
-    def accept(self, proposalNumber, event) -> None:
-        print(f'! Accept  request #{proposalNumber} recieved:', end=' ')
 
-        self.accepted[proposalNumber] = EnvironmentError
-            
-        # Write proposer into safe momory
-        with open(f'log_{sys.argv[1]}.txt', 'w+') as f:
-            
-            data = json.loads(f.read())
-            data.append({proposalNumber:event})
-            f.write(json.dumps(data))
-            
-        print('Accepted.')
+    def __checkMajority(self, responses, proposalNumber):
 
-        
+        sortedResponses = Counter([(res[0], res[1], res[2]) for res in responses]).most_common()
+        # print('Paxos.__checkMajority >> sortedResponses ==', sortedResponses)
+
+        # if there are no responses
+        if not sortedResponses: return False
+
+        # take the first most common responses
+        majority = sortedResponses[0]
+
+        # majority[1] is the counter of the most common responses
+        if majority[1] < self.numAcceptors // 2:
+            # if the majority of responses is not greater than half of acceptors return failure
+            return False
+
+        # returns an event for the current proposal if there is one else t is none
+        _, event, promise = majority[0]
+
+        if promise:
+            return True
+
+        # if an event has been already recorded with this identifier
+        if event: self.accept(proposalNumber, event)
+        # adding the proposal 
+        self.promised.append(int(proposalNumber))
+
+        return False
+
+
+    def __prepare(self, propNum):
+        threads = [Thread(target=acc.promise, args=[propNum]) for acc in self.acceptors]
+        for t in threads: t.start()
+        responses = [t.join() for t in threads if t.join(3)]
+        return responses
+
+
+    def __generateProposal(self):
+        return max(self.promised) + 1 + (self.nodeId / 10)
+
+    def __connect(self):
+        for acceptor in self.acceptors:
+            acceptor.connect()
+
+    def __disconnect(self):
+        for acceptor in self.acceptors:
+            acceptor.disconnect()

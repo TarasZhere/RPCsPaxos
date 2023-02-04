@@ -1,9 +1,9 @@
-import socket
 from rpc import RPCServer
-from threading import Thread
-from threadingReturn import ThreadReturn
-import sys
 from paxos import Paxos
+from threading import Thread
+import socket
+import sys
+
 
 class Server:
     def __init__(self, host:str='localhost', port:int=8000) -> None:
@@ -36,5 +36,5 @@ if __name__=='__main__':
 
     try:
         Server(port=int(sys.argv[1])).run()
-    except:
+    except Exception as e:
         print('Port in use')

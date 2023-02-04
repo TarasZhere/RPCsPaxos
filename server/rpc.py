@@ -52,7 +52,13 @@ class RPCServer:
             print(f'Managing  request from {address}.')
             while True:
                 functionName, args, kwargs = json.loads(client.recv(SIZE).decode())
+                # Showing request Type
+                print(f'> {address} : {functionName}({args})')
 
+                if functionName == "test":
+                    client.sendall("OK")
+                    break
+                
                 try:
                     response = self._methods[functionName](*args, **kwargs)
                     client.sendall(json.dumps(response).encode())
@@ -77,7 +83,7 @@ class RPCClient:
     def isConnected(self):
         try:
             self.__sock.sendall(b'test')
-            # self.__sock.recv(SIZE)
+            self.__sock.recv(SIZE)
             return True
 
         except:
@@ -101,7 +107,10 @@ class RPCClient:
     def __getattr__(self, __name: str):
         def excecute(*args, **kwargs):
             self.__sock.sendall(json.dumps((__name, args, kwargs)).encode())
-            response = json.loads(self.__sock.recv(SIZE).decode())
+            try:
+                response = json.loads(self.__sock.recv(SIZE).decode())
+            except:
+                response = 'Done'
             return response
         return excecute
 
