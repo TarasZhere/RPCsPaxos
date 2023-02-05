@@ -10,6 +10,7 @@ class Server:
         self.host = host
         self.port = port
         self.address = (host, port)
+
         self.rpc = RPCServer()
         self.rpc.registerInstance(Paxos())
         pass
@@ -35,7 +36,9 @@ class Server:
 if __name__=='__main__':
 
     try:
-        Server(port=int(sys.argv[1], int(sys.argv[2]))).run()
+        host = sys.argv[1]
+        port = int(sys.argv[2])
+
+        Server(host=host, port=port).run()
     except Exception as e:
         print(e)
-        print('Port in use')
