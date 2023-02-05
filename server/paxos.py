@@ -3,8 +3,8 @@ from collections import Counter
 from rpc import RPCClient
 import sys
 # for testing purpose only
-from time import sleep
-from random import randint
+# from time import sleep
+# from random import randint
 
 class Paxos(object):
     def __init__(self) -> None:
@@ -12,9 +12,9 @@ class Paxos(object):
         self.promised = [0]
         self.nodeId = int(sys.argv[2]) % 10
         self.acceptors = [
-            RPCClient(('localhost', 8000)),
-            RPCClient(('localhost', 8001)),
-            RPCClient(('localhost', 8002)),
+            RPCClient((sys.argv[1], 8000)),
+            RPCClient((sys.argv[1], 8001)),
+            RPCClient((sys.argv[1], 8002)),
         ]
         self.numAcceptors = len(self.acceptors)
         pass
