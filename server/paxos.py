@@ -10,7 +10,7 @@ class Paxos(object):
     def __init__(self) -> None:
         self.accepted = dict()
         self.promised = [0]
-        self.nodeId = int(sys.argv[1]) % 10
+        self.nodeId = int(sys.argv[2]) % 10
         self.acceptors = [
             RPCClient(('localhost', 8000)),
             RPCClient(('localhost', 8001)),
@@ -40,7 +40,7 @@ class Paxos(object):
             n:event
         })
 
-        with open(f'log{sys.argv[1]}.txt', 'a') as file:
+        with open(f'log{sys.argv[2]}.txt', 'a') as file:
             file.write(f'{propoNum},{event}\n')
                 
         return 'ok'

@@ -4,7 +4,6 @@ from threading import Thread
 import socket
 import sys
 
-
 class Server:
     def __init__(self, host:str='0.0.0.0', port:int=8000) -> None:
         self.host = host
