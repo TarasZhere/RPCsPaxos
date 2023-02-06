@@ -46,7 +46,7 @@ class Paxos(object):
         return 'ok'
 
 
-    def paxos(self, event):
+    def consensus(self, event):
         self.__connect()
 
         while True:
