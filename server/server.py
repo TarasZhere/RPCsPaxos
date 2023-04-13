@@ -2,7 +2,6 @@ from rpc import RPCServer
 from paxos import Paxos
 from threading import Thread
 import socket
-import click
 
 class Server:
     def __init__(self, host:str, port:int) -> None:
@@ -32,27 +31,11 @@ class Server:
                     break
 
 
-@click.command()
-@click.option('--host', default='0.0.0.0', help='Host IP addr')
-def setHost(host):
-    global HOST
-    HOST = host
-    pass
-
-@click.command()
-@click.option('--port', default=80, help='Port number')
-def setPort(port):
-    global PORT
-    PORT = port
-    pass
-
 
             
 if __name__=='__main__':
-    setPort()
-    setHost()
 
     try:
-        Server(host=HOST,  port=PORT).run()
+        Server(host='0.0.0.0',  port=80).run()
     except Exception as e:
         print(e)
