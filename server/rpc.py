@@ -94,7 +94,8 @@ class RPCClient:
         try:
             self.__sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.__sock.connect(self.__address)
-        except:
+        except EOFError as e:
+            print(e)
             raise Exception('Client was not able to connect.')
     
     def disconnect(self):
