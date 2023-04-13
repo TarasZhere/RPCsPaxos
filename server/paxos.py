@@ -2,20 +2,24 @@ from threadingReturn import ThreadReturn as Thread
 from collections import Counter
 from rpc import RPCClient
 import sys
-# for testing purpose only
-# from time import sleep
-# from random import randint
 
 class Paxos(object):
     def __init__(self) -> None:
         self.accepted = dict()
         self.promised = [0]
-        self.nodeId = int(sys.argv[2]) % 10
-        self.acceptors = [
-            RPCClient((sys.argv[1], 8000)),
-            RPCClient((sys.argv[1], 8001)),
-            RPCClient((sys.argv[1], 8002)),
-        ]
+        self.nodeId = int(sys.argv[1]) % 10
+        try:
+            self.acceptors = [
+                RPCClient((sys.argv[2], 80)),
+                RPCClient((sys.argv[3], 80)),
+                RPCClient((sys.argv[4], 80)),
+            ]
+        except:
+            self.acceptors = [
+                RPCClient(('0.0.0.0', 80)),
+                RPCClient(('0.0.0.0', 81)),
+                RPCClient(('0.0.0.0', 82)),
+            ]
         self.numAcceptors = len(self.acceptors)
         pass
 

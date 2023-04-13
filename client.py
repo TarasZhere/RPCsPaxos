@@ -4,21 +4,21 @@ from random import randint
 import sys
 
 try: HOST = sys.argv[1] # The server's hostname or IP address
-except: HOST = "10.128.0.2"  
+except: HOST = "0.0.0.0"  
 
 
 try: PORT = int(sys.argv[2]) # The port used by the server
-except: PORT = 8080 
+except: PORT = 80
 
 
 try: numReq = int(sys.argv[3])
 except: numReq = 1
 
 
-from time import sleep
+
 # print(server.isConnected())
 def multy():
-    sleep(randint(0,10)/10)
+    # sleep(randint(0,10)/10)
     server = RPCClient((HOST, PORT))
     server.connect()
     print(server.consensus(randint(0,10)))

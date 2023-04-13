@@ -5,7 +5,7 @@ import socket
 import sys
 
 class Server:
-    def __init__(self, host:str='0.0.0.0', port:int=8000) -> None:
+    def __init__(self, host:str='0.0.0.0', port:int=80) -> None:
         self.host = host
         self.port = port
         self.address = (host, port)
@@ -35,9 +35,6 @@ class Server:
 if __name__=='__main__':
 
     try:
-        host = sys.argv[1]
-        port = int(sys.argv[2])
-
-        Server(host=host, port=port).run()
+        Server().run()
     except Exception as e:
         print(e)
