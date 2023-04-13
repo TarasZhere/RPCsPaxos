@@ -5,7 +5,7 @@ import socket
 import sys
 
 class Server:
-    def __init__(self, host:str='0.0.0.0', port:int=80) -> None:
+    def __init__(self, host:str='34.28.62.84', port:int=80) -> None:
         self.host = host
         self.port = port
         self.address = (host, port)
