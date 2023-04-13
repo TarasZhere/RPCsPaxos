@@ -2,10 +2,10 @@ from rpc import RPCServer
 from paxos import Paxos
 from threading import Thread
 import socket
-import sys
+import click
 
 class Server:
-    def __init__(self, host:str='0.0.0.0', port:int=80) -> None:
+    def __init__(self, host:str, port:int) -> None:
         self.host = host
         self.port = port
         self.address = (host, port)
@@ -31,11 +31,28 @@ class Server:
                     print(f'! {self.address} interrupted')
                     break
 
+
+@click.command()
+@click.option('--host', default='0.0.0.0', help='Host IP addr')
+def setHost(host):
+    global HOST
+    HOST = host
+    pass
+
+@click.command()
+@click.option('--port', default=80, help='Port number')
+def setPort(port):
+    global PORT
+    PORT = port
+    pass
+
+
             
 if __name__=='__main__':
+    setPort()
+    setHost()
 
     try:
-        port = 80 + int(sys.argv[1])
-        Server(port=port).run()
+        Server(host=HOST,  port=PORT).run()
     except Exception as e:
         print(e)
