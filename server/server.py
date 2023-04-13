@@ -35,6 +35,7 @@ class Server:
 if __name__=='__main__':
 
     try:
-        Server().run()
+        port = 80 + int(sys.argv[1])
+        Server(port=port).run()
     except Exception as e:
         print(e)

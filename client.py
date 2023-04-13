@@ -2,27 +2,23 @@ from server.rpc import RPCClient
 from threading import Thread
 from random import randint
 import sys
+from time import sleep
 
-try: HOST = sys.argv[1] # The server's hostname or IP address
-except: HOST = "0.0.0.0"  
+HOST = "0.0.0.0"  
 
-
-try: PORT = int(sys.argv[2]) # The port used by the server
-except: PORT = 80
+PORT = 80
 
 
-try: numReq = int(sys.argv[3])
-except: numReq = 1
+try: numReq = int(sys.argv[1])
+except: numReq = 2
 
-
-
-# print(server.isConnected())
-def multy():
-    # sleep(randint(0,10)/10)
-    server = RPCClient((HOST, PORT))
+# This functions creates concurrent definitions with a random sleep between requests to random servers
+def concurrentDefinition(id = 0):
+    sleep(randint(0,10)/10.0)
+    server = RPCClient((HOST, PORT + id))
     server.connect()
-    print(server.consensus(randint(0,10)))
+    print(server.consensus(randint(1,10)))
 
 for _ in range(numReq):
-    Thread(target=multy).start()
+    Thread(target=concurrentDefinition, args=[randint(0,2)]).start()
 
