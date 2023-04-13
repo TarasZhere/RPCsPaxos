@@ -4,7 +4,9 @@ from random import randint
 import sys
 from time import sleep
 
-HOST = "0.0.0.0"  
+
+try: HOST = int(sys.argv[2])
+except: HOST = "0.0.0.0"
 
 PORT = 80
 
