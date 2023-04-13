@@ -22,5 +22,5 @@ def concurrentDefinition(id = 0):
     print(server.consensus(randint(1,10)))
 
 for _ in range(numReq):
-    Thread(target=concurrentDefinition, args=[randint(0,2)]).start()
+    Thread(target=concurrentDefinition).start()
 
